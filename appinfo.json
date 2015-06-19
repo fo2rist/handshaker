@@ -1,0 +1,18 @@
+{
+  "uuid": "5d916845-5b71-45a3-b28a-af4f39a8f87d",
+  "shortName": "handshaker",
+  "longName": "handshaker",
+  "companyName": “weezlabs”,
+  "versionLabel": “0.1”,
+  "sdkVersion": "3",
+  "targetPlatforms": ["aplite", "basalt"],
+  "watchapp": {
+    "watchface": false
+  },
+  "appKeys": {
+    "dummy": 0
+  },
+  "resources": {
+    "media": []
+  }
+}
