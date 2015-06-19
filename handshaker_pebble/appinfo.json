@@ -2,8 +2,8 @@
   "uuid": "10fd2b6b-a7b4-44fc-932b-7ddd03d40634",
   "shortName": "handshaker_pebble",
   "longName": "handshaker_pebble",
-  "companyName": "MakeAwesomeHappen",
-  "versionLabel": "1.0",
+  "companyName": "weezlabs",
+  "versionLabel": "0.1",
   "sdkVersion": "3",
   "targetPlatforms": ["aplite", "basalt"],
   "watchapp": {
