@@ -19,13 +19,13 @@ static void worker_message_handler(uint16_t type, AppWorkerMessage *data) {
     
     // Compose string of all data
     snprintf(s_buffer, sizeof(s_buffer),
-             "X,Y,Z\n %d,%d,%d\n",
+             "Accel X,Y,Z\n %d,%d,%d\n",
              accel_data.x, accel_data.y, accel_data.z
              );
     
     //Show the data
     text_layer_set_text(text_layer, s_buffer);
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "Got %s", s_buffer);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "%d,%d,%d", accel_data.x, accel_data.y, accel_data.z);
   }
 }
 
