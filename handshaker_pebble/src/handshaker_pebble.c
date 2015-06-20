@@ -5,6 +5,16 @@
 static Window *window;
 static TextLayer *text_layer;
 
+// --------------------- APP COMMUNICATION -----------------------
+static void send_accel_data(uint16_t x, uint16_t y, uint16_t z) {
+  DictionaryIterator *iter;
+  app_message_outbox_begin(&iter);
+  dict_write_int(iter, 0, &x, sizeof(uint16_t), true /*signed*/);
+  dict_write_int(iter, 1, &y, sizeof(uint16_t), true /*signed*/);
+  dict_write_int(iter, 2, &z, sizeof(uint16_t), true /*signed*/);
+  app_message_outbox_send();
+}
+
 // --------------------- BACKGROUND WORKER COMMUNICATION ---------
 static void worker_message_handler(uint16_t type, AppWorkerMessage *data) {
   // Long lived buffer
@@ -26,18 +36,24 @@ static void worker_message_handler(uint16_t type, AppWorkerMessage *data) {
              );
     APP_LOG(APP_LOG_LEVEL_DEBUG, "%d,%d,%d", accel_data.x, accel_data.y, accel_data.z);
     
+    // Notify phone
+    send_accel_data(accel_data.x, accel_data.y, accel_data.z);
+    
   } else if (type == 1) {
-    uint16_t total = data->data0;
-  
     // Compose string of all data
     snprintf(s_buffer, sizeof(s_buffer),
-             "Accel Exceeded\n %d",
-             total
+             "Accel Exceeded\n"
              );
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Start");
+  } else if (type == 2) {
+    // Compose string of all data
+    snprintf(s_buffer, sizeof(s_buffer),
+             "Calm\n"
+             );
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Stop");
   };
-    
-    
-    
+  
+  
   //Show the data
   text_layer_set_text(text_layer, s_buffer);
 }
@@ -95,7 +111,7 @@ static void window_unload(Window *window) {
 }
 
 static void init(void) {
-  //Show the window
+  // Show the window
   window = window_create();
   window_set_click_config_provider(window, click_config_provider);
   window_set_window_handlers(window, (WindowHandlers) {
@@ -105,8 +121,13 @@ static void init(void) {
   const bool animated = true;
   window_stack_push(window, animated);
   
-  //Subscribe to worker's messages
+  // Subscribe to worker's messages
   app_worker_message_subscribe(worker_message_handler);
+  
+  // Prepare to messaging communication
+  // Open AppMessage
+  app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
+
 }
 
 static void deinit(void) {

@@ -1,12 +1,10 @@
-package com.getpebble.pebblekitexample;
+package com.weezlabs.handshakerphone;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 import android.app.ActionBar;
@@ -20,8 +18,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -29,8 +25,6 @@ import com.getpebble.android.kit.PebbleKit;
 import com.getpebble.android.kit.PebbleKit.PebbleDataReceiver;
 import com.getpebble.android.kit.util.PebbleDictionary;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 public class MainActivity extends Activity {
 	
@@ -51,7 +45,6 @@ public class MainActivity extends Activity {
 	private TextView textView;
 
 	private PebbleKit.PebbleDataLogReceiver dataloggingReceiver;
-	private StringBuilder resultBuilder = new StringBuilder();
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -66,6 +59,20 @@ public class MainActivity extends Activity {
 		// Setup TextView
 		textView = (TextView)findViewById(R.id.text_view);
 		textView.setText("Waiting for logging data...");
+
+		//Register for messages
+		PebbleKit.registerReceivedDataHandler(this, new PebbleKit.PebbleDataReceiver(WATCHAPP_UUID) {
+
+			@Override
+			public void receiveData(final Context context, final int transactionId, final PebbleDictionary data) {
+				Log.i(getLocalClassName(), "Received value=" + data.getInteger(0) + " " + data.getInteger(1) + " "+ data.getInteger(2));
+				textView.setText("Got: " + data.getInteger(0) + " " + data.getInteger(1) + " "+ data.getInteger(2));
+
+				PebbleKit.sendAckToPebble(getApplicationContext(), transactionId);
+			}
+
+		});
+
 	}
 	
 	@Override
@@ -79,8 +86,7 @@ public class MainActivity extends Activity {
 			public void receiveData(Context context, UUID logUuid, Long timestamp, Long tag, int data) {
 				// Check this is the compass headings log
 				if(tag.intValue() == DATA_LOG_TAG_ACCEL_DATA) {
-					resultBuilder.append("Get: " + tag + " dat: " + data + " int");
-					resultBuilder.append("\n");
+					textView.setText("Get: " + tag + " dat: " + data + " int\n");
 				}
 			}
 
@@ -88,8 +94,7 @@ public class MainActivity extends Activity {
 			public void receiveData(Context context, UUID logUuid, Long timestamp, Long tag, Long data) {
 				if(tag.intValue() == DATA_LOG_TAG_ACCEL_DATA) {
 					// Get the compass value and append to result StringBuilder
-					resultBuilder.append("Get: " + tag + " dat: " + data + " long");
-					resultBuilder.append("\n");
+					textView.setText("Get: " + tag + " dat: " + data + " long\n");
 				}
 			}
 
@@ -97,24 +102,20 @@ public class MainActivity extends Activity {
 			public void receiveData(Context context, UUID logUuid, Long timestamp, Long tag, byte[] data) {
 				if(tag.intValue() == DATA_LOG_TAG_ACCEL_DATA) {
 					// Get the compass value and append to result StringBuilder
-					resultBuilder.append("Get: " + tag + " dat: " + data + " array");
-					resultBuilder.append("\n");
+					textView.setText("Get: " + tag + " dat: " + data + " array\n");
 				}
 			}
 
 			@Override
 			public void onFinishSession(Context context, UUID logUuid, Long timestamp, Long tag) {
-				super.onFinishSession(context, logUuid, timestamp, tag);
-
 				// Display all compass headings received
-				textView.setText("Session finished!\n" + "Results were: \n\n" + resultBuilder.toString());
+				textView.setText("Session finished!\n");
 			}
-
 		};
 
 		// Register DataLogging Receiver
-		PebbleKit.registerDataLogReceiver(this, dataloggingReceiver);
-		PebbleKit.requestDataLogsForApp(this, WATCHAPP_UUID);
+//		PebbleKit.registerDataLogReceiver(this, dataloggingReceiver);
+//		PebbleKit.requestDataLogsForApp(this, WATCHAPP_UUID);
 
 		//Register connected disconnecting events
 		PebbleKit.registerPebbleConnectedReceiver(getApplicationContext(), new BroadcastReceiver() {
