@@ -1,10 +1,15 @@
+#include <math.h>
 #include <pebble.h>
+
 
 static Window *window;
 static TextLayer *text_layer;
 
 // --------------------- BACKGROUND WORKER COMMUNICATION ---------
 static void worker_message_handler(uint16_t type, AppWorkerMessage *data) {
+  // Long lived buffer
+  static char s_buffer[128];
+
   if (type == 0) {
     // Read ticks from worker's packet
     AccelData accel_data = {
@@ -14,19 +19,27 @@ static void worker_message_handler(uint16_t type, AppWorkerMessage *data) {
       .did_vibrate = false
     };
     
-    // Long lived buffer
-    static char s_buffer[128];
-    
     // Compose string of all data
     snprintf(s_buffer, sizeof(s_buffer),
              "Accel X,Y,Z\n %d,%d,%d\n",
              accel_data.x, accel_data.y, accel_data.z
              );
-    
-    //Show the data
-    text_layer_set_text(text_layer, s_buffer);
     APP_LOG(APP_LOG_LEVEL_DEBUG, "%d,%d,%d", accel_data.x, accel_data.y, accel_data.z);
-  }
+    
+  } else if (type == 1) {
+    uint16_t total = data->data0;
+  
+    // Compose string of all data
+    snprintf(s_buffer, sizeof(s_buffer),
+             "Accel Exceeded\n %d",
+             total
+             );
+  };
+    
+    
+    
+  //Show the data
+  text_layer_set_text(text_layer, s_buffer);
 }
 
 // --------------------- CLICK LISTENERS CONFIG ------------------
@@ -71,7 +84,7 @@ static void window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
 
-  text_layer = text_layer_create((GRect) { .origin = { 0, 72 }, .size = { bounds.size.w, 40 } });
+  text_layer = text_layer_create((GRect) { .origin = { 0, 72 }, .size = { bounds.size.w, 60 } });
   text_layer_set_text(text_layer, "Press a button");
   text_layer_set_text_alignment(text_layer, GTextAlignmentCenter);
   layer_add_child(window_layer, text_layer_get_layer(text_layer));
