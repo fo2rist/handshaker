@@ -39,6 +39,16 @@ public class MainActivity extends Activity {
 		BUTTON_DOWN = 2;
 	private static final int DATA_LOG_TAG_ACCEL_DATA = 0x1234;
 
+	static final int KEY_TYPE = 0;
+	static final int KEY_ACCEL_X = 1;
+	static final int KEY_ACCEL_Y = 2;
+	static final int KEY_ACCEL_Z = 3;
+	static final int KEY_DURATION = 4;
+
+	static final int TYPE_START = 0;
+	static final int TYPE_END = 1;
+	static final int TYPE_PROGRESS = 2;
+
 	private Handler handler = new Handler();
 	private PebbleDataReceiver appMessageReciever;
 	private TextView whichButtonView;
@@ -65,8 +75,18 @@ public class MainActivity extends Activity {
 
 			@Override
 			public void receiveData(final Context context, final int transactionId, final PebbleDictionary data) {
-				Log.i(getLocalClassName(), "Received value=" + data.getInteger(0) + " " + data.getInteger(1) + " "+ data.getInteger(2));
-				textView.setText("Got: " + data.getInteger(0) + " " + data.getInteger(1) + " "+ data.getInteger(2));
+				Long type = data.getInteger(KEY_TYPE);
+				switch (type.intValue()) {
+					case TYPE_START:
+						textView.setText("Started");
+						break;
+					case TYPE_PROGRESS:
+						textView.setText("Got: " + data.getInteger(KEY_ACCEL_X) + " " + data.getInteger(KEY_ACCEL_Y) + " "+ data.getInteger(KEY_ACCEL_Z));
+						break;
+					case TYPE_END:
+						textView.setText("You've doing it for " + data.getInteger(KEY_DURATION) + " sec");
+						break;
+				}
 
 				PebbleKit.sendAckToPebble(getApplicationContext(), transactionId);
 			}

@@ -1,7 +1,7 @@
 #include <pebble_worker.h>
+#include "../constants.h"
+#include "../data_processor.h"
 
-
-static DataLoggingSessionRef logging_session;
 
 static const int32_t G = 1000;
 static const int32_t THRESHOLD = 150000;
@@ -33,21 +33,23 @@ static bool accumulate_data(AccelData *accel_data) {
       worker_launch_app();
       
       // Send the data to the foreground app
-      AppWorkerMessage msg_data;
-      app_worker_send_message(1, &msg_data);
+      int timestamp = time(NULL);
+      AppWorkerMessage msg_data = {
+        .data0 = timestamp
+      };
       
-//      //Enable Pebble-Phone logging
-//      logging_session = data_logging_create(1234, DATA_LOGGING_BYTE_ARRAY, 6, false);
+      app_worker_send_message(BackgroundMessageJerkStarted, &msg_data);
+      
     }
     if (total <= THRESHOLD && is_threshold_exceded) {
       is_threshold_exceded = false;
       
       // Send the data to the foreground app
-      AppWorkerMessage msg_data;
-      app_worker_send_message(2, &msg_data);
-      
-//      // When we don't need to log anything else, we can close off the session.
-//      data_logging_finish(logging_session);
+      int timestamp = time(NULL);
+      AppWorkerMessage msg_data = {
+        .data0 = timestamp
+      };
+      app_worker_send_message(BackgroundMessageJerkStopped, &msg_data);
     }
   }
   
@@ -58,7 +60,13 @@ static bool accumulate_data(AccelData *accel_data) {
 
 static void data_handler(AccelData *data, uint32_t num_samples) {
   //Accumulate statistics
-  accumulate_data(data);
+  accumulate_data(data); //old
+//  AccelerometerData float_data = { //new - temp disabled
+//    .x = ((float)data->x) / 1000.0,
+//    .y = ((float)data->y) / 1000.0,
+//    .z = ((float)data->z) / 1000.0
+//  };
+//  add_data(float_data);
   
   if (is_threshold_exceded) {
     // Construct a data packet
@@ -69,30 +77,16 @@ static void data_handler(AccelData *data, uint32_t num_samples) {
     };
     
     // Send the data to the foreground app
-    app_worker_send_message(0, &msg_data);
-  
-//    //Send data to phone
-//    uint16_t log_data[] = { data->x,
-//      data->y,
-//      data->z};
-//  
-//    DataLoggingResult result = data_logging_log(logging_session, &log_data, 1);
-//    switch (result) {
-//      case 0: //DATA_LOG_SUCCESS
-//        ;
-//        break;
-//    
-//      default:
-//      //  DATA_LOG_BUSY, //! Someone else is writing to this log
-//      //  DATA_LOG_FULL, //! No more space to save data
-//      //  DATA_LOG_NOT_FOUND, //! The log does not exist
-//      //  DATA_LOG_CLOSED //! The log was made inactive
-//      //  DATA_LOG_INVALID_PARAMS
-//        break;
-//    }
+    app_worker_send_message(BackgroundMessageJerkProgress, &msg_data);
   }
 }
 
+static void jerkoff_started() {
+  AppWorkerMessage msg_data;
+  app_worker_send_message(BackgroundMessageJerkStarted, &msg_data);
+}
+
+// ------------------------- WORKER BOILERPLATE --------------------
 static void worker_init() {
   // Subscribe to the accelerometer data service
   int num_samples = 1;
@@ -100,6 +94,10 @@ static void worker_init() {
   
   // Choose update rate
   accel_service_set_sampling_rate(ACCEL_SAMPLING_10HZ);
+  
+  //Initialize data analyzer
+  initialize_accelerometer_data_handler(10.0, 5.0);//frequency and threshold
+  set_jerkingoff_started_callback(jerkoff_started);
 }
 
 static void worker_deinit() {

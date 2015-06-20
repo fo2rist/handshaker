@@ -1,17 +1,48 @@
-#include <math.h>
 #include <pebble.h>
-
+#include <time.h>
+#include "../constants.h"
 
 static Window *window;
 static TextLayer *text_layer;
 
+static int last_start_time;
+static int last_stop_time;
+
+static const int16_t KEY_TYPE = 0;
+static const int16_t KEY_ACCEL_X = 1;
+static const int16_t KEY_ACCEL_Y = 2;
+static const int16_t KEY_ACCEL_Z = 3;
+static const int16_t KEY_DURATION = 4;
+
+static const int16_t TYPE_START = 0;
+static const int16_t TYPE_END = 1;
+static const int16_t TYPE_PROGRESS = 2;
+
+
+
 // --------------------- APP COMMUNICATION -----------------------
-static void send_accel_data(uint16_t x, uint16_t y, uint16_t z) {
+static void send_accel_data(int16_t x, int16_t y, int16_t z) {
   DictionaryIterator *iter;
   app_message_outbox_begin(&iter);
-  dict_write_int(iter, 0, &x, sizeof(uint16_t), true /*signed*/);
-  dict_write_int(iter, 1, &y, sizeof(uint16_t), true /*signed*/);
-  dict_write_int(iter, 2, &z, sizeof(uint16_t), true /*signed*/);
+  dict_write_int(iter, KEY_TYPE, &TYPE_PROGRESS, sizeof(uint16_t), true /*signed*/);
+  dict_write_int(iter, KEY_ACCEL_X, &x, sizeof(int16_t), true /*signed*/);
+  dict_write_int(iter, KEY_ACCEL_Y, &y, sizeof(int16_t), true /*signed*/);
+  dict_write_int(iter, KEY_ACCEL_Z, &z, sizeof(int16_t), true /*signed*/);
+  app_message_outbox_send();
+}
+
+static void send_start_notification() {
+  DictionaryIterator *iter;
+  app_message_outbox_begin(&iter);
+  dict_write_int(iter, KEY_TYPE, &TYPE_START, sizeof(uint16_t), true /*signed*/);
+  app_message_outbox_send();
+}
+
+static void send_stop_notification(int duration) {
+  DictionaryIterator *iter;
+  app_message_outbox_begin(&iter);
+  dict_write_int(iter, KEY_TYPE, &TYPE_END, sizeof(uint16_t), true /*signed*/);
+  dict_write_int(iter, KEY_DURATION, &duration, sizeof(int), true /*signed*/);
   app_message_outbox_send();
 }
 
@@ -20,37 +51,53 @@ static void worker_message_handler(uint16_t type, AppWorkerMessage *data) {
   // Long lived buffer
   static char s_buffer[128];
 
-  if (type == 0) {
-    // Read ticks from worker's packet
-    AccelData accel_data = {
-      .x = data->data0,
-      .y = data->data1,
-      .z = data->data2,
-      .did_vibrate = false
-    };
+  switch ((BackgroundMessageType)type) {
+
+    case BackgroundMessageJerkProgress: {
+      // Read ticks from worker's packet
+      AccelData accel_data = {
+        .x = data->data0,
+        .y = data->data1,
+        .z = data->data2,
+        .did_vibrate = false
+      };
     
-    // Compose string of all data
-    snprintf(s_buffer, sizeof(s_buffer),
-             "Accel X,Y,Z\n %d,%d,%d\n",
-             accel_data.x, accel_data.y, accel_data.z
-             );
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "%d,%d,%d", accel_data.x, accel_data.y, accel_data.z);
+      // Compose string of all data
+      snprintf(s_buffer, sizeof(s_buffer),
+               "Accel X,Y,Z\n %d,%d,%d\n",
+               accel_data.x, accel_data.y, accel_data.z
+               );
+      APP_LOG(APP_LOG_LEVEL_DEBUG, "%d,%d,%d", accel_data.x, accel_data.y, accel_data.z);
     
-    // Notify phone
-    send_accel_data(accel_data.x, accel_data.y, accel_data.z);
-    
-  } else if (type == 1) {
-    // Compose string of all data
-    snprintf(s_buffer, sizeof(s_buffer),
-             "Accel Exceeded\n"
-             );
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "Start");
-  } else if (type == 2) {
-    // Compose string of all data
-    snprintf(s_buffer, sizeof(s_buffer),
-             "Calm\n"
-             );
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "Stop");
+      // Notify phone
+      send_accel_data(accel_data.x, accel_data.y, accel_data.z);
+      break;
+    }
+    case BackgroundMessageJerkStarted: {
+      last_start_time = data->data0;
+      // Compose string of all data
+      snprintf(s_buffer, sizeof(s_buffer),
+              "Accel Exceeded\n"
+              );
+      APP_LOG(APP_LOG_LEVEL_DEBUG, "Start");
+      
+      // Notify phone
+      send_start_notification();
+      break;
+    }
+    case BackgroundMessageJerkStopped: {
+      last_stop_time = data->data0;
+      // Compose string of all data
+      snprintf(s_buffer, sizeof(s_buffer),
+               "Did it for %d sec\n",
+               last_stop_time - last_start_time
+               );
+      APP_LOG(APP_LOG_LEVEL_DEBUG, "Stop. Duration %d", last_stop_time - last_start_time);
+      
+      // Notify phone
+      send_stop_notification(last_stop_time - last_start_time);
+      break;
+    }
   };
   
   
@@ -81,11 +128,11 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
 }
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
-  text_layer_set_text(text_layer, "Up");
+
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
-  text_layer_set_text(text_layer, "Down");
+
 }
 
 static void click_config_provider(void *context) {
