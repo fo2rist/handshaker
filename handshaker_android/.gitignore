@@ -1,6 +1,3 @@
-.DS_Store
-
-### ANDROID
 # Built application files
 *.apk
 *.ap_
@@ -29,14 +26,9 @@ proguard/
 # Log Files
 *.log
 
-
-## PEBBLE
-
-# Ignore build generated files
-build
-
-# Ignore waf lock file
-.lock-waf*
-
-
-## APPLE WATCH
+# Other
+*.iml
+.idea/
+gradlew
+gradlew.bat
+gradle-wrapper.*
