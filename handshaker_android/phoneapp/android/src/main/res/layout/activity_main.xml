@@ -1,0 +1,80 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/actionbar_orange"
+    android:clipToPadding="false"
+    android:fitsSystemWindows="true"
+    tools:context="com.getpebble.pebblekitexample.MainActivity" >
+
+    <RelativeLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:background="#FFFFFF" >
+
+        <TextView
+            android:id="@+id/install_watchapp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="10dp"
+            android:text="Install Watchapp"
+            android:textColor="#AAAAAA"
+            android:textSize="25sp" />
+
+        <Button
+            android:id="@+id/button_install"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/install_watchapp"
+            android:layout_marginTop="10dp"
+            android:text="INSTALL"
+            android:onClick="onInstallAppClicked"
+            />
+        <Button
+            android:id="@+id/button_launch"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/install_watchapp"
+            android:layout_toRightOf="@id/button_install"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="10dp"
+            android:text="LAUNCH"
+            android:onClick="onLaunchAppClicked"
+            />
+
+        <TextView
+            android:id="@+id/press_a_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_below="@id/button_install"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="10dp"
+            android:text="Check the connenction"
+            android:textColor="#AAAAAA"
+            android:textSize="25sp" />
+
+        <Button
+            android:id="@+id/is_alive_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/press_a_button"
+            android:layout_centerHorizontal="true"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="10dp"
+            android:text="Is alive"
+            android:onClick="onCheckAliveClicked"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Log\n1\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n.\n."
+            android:id="@+id/text_view"
+            android:scrollbars="vertical"
+            android:layout_below="@+id/is_alive_button"
+            android:layout_alignParentBottom="true"/>
+    </RelativeLayout>
+
+</LinearLayout>
