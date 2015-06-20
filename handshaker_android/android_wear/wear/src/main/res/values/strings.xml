@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Handshaker</string>
+    <string name="hello_round">Congrats! U \'r handshaker!</string>
+    <string name="hello_square">Congrats! U \'r handshaker!</string>
+</resources>
