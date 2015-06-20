@@ -174,7 +174,6 @@ static void init(void) {
   // Prepare to messaging communication
   // Open AppMessage
   app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
-
 }
 
 static void deinit(void) {

@@ -1,5 +1,6 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.weezlabs.handshakerphone.MainActivity" >
-
+    <item android:id="@+id/menu_install_app" android:title="Install watch app" />
+    <item android:id="@+id/menu_launch_app" android:title="Launch watch app" />
 </menu>
