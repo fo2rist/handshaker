@@ -57,47 +57,50 @@ static void worker_message_handler(uint16_t type, AppWorkerMessage *data) {
   switch ((BackgroundMessageType)type) {
 
     case BackgroundMessageJerkProgress: {
-      // Read ticks from worker's packet
+      // Compose string of all data
       AccelData accel_data = {
         .x = data->data0,
         .y = data->data1,
         .z = data->data2,
         .did_vibrate = false
       };
-    
-      // Compose string of all data
       snprintf(s_buffer, sizeof(s_buffer),
                "Go GO GOOOO!"
                );
-      APP_LOG(APP_LOG_LEVEL_DEBUG, "%d,%d,%d", accel_data.x, accel_data.y, accel_data.z);
+      layer_set_hidden(bitmap_layer_get_layer(s_bitmap_layer), !layer_get_hidden(bitmap_layer_get_layer(s_bitmap_layer))); //Add some blinking
     
       // Notify phone
       send_accel_data(accel_data.x, accel_data.y, accel_data.z);
+
+      APP_LOG(APP_LOG_LEVEL_DEBUG, "%d,%d,%d", accel_data.x, accel_data.y, accel_data.z);
       break;
     }
     case BackgroundMessageJerkStarted: {
-      last_start_time = data->data0;
       // Compose string of all data
+      last_start_time = data->data0;
       snprintf(s_buffer, sizeof(s_buffer),
               "Accel Exceeded"
               );
-      APP_LOG(APP_LOG_LEVEL_DEBUG, "Start");
       
       // Notify phone
       send_start_notification();
+
+      APP_LOG(APP_LOG_LEVEL_DEBUG, "Start");
       break;
     }
     case BackgroundMessageJerkStopped: {
-      last_stop_time = data->data0;
       // Compose string of all data
+      last_stop_time = data->data0;
       snprintf(s_buffer, sizeof(s_buffer),
                "Did it in %d sec",
                last_stop_time - last_start_time
                );
-      APP_LOG(APP_LOG_LEVEL_DEBUG, "Stop. Duration %d", last_stop_time - last_start_time);
+      layer_set_hidden(bitmap_layer_get_layer(s_bitmap_layer), false); // Stop blinking
       
       // Notify phone
       send_stop_notification(last_stop_time - last_start_time);
+
+      APP_LOG(APP_LOG_LEVEL_DEBUG, "Stop. Duration %d", last_stop_time - last_start_time);
       break;
     }
   };
