@@ -1,6 +1,5 @@
 package com.weezlabs.research.handshaker;
 
-import android.app.Activity;
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -35,11 +34,13 @@ public class AccelerometerHelper implements SensorEventListener {
     private static AccelerometerHelper mInstance;
 
     private final Set<OnAccelerometerListener> mOnAccelerometerListeners;
-    private Activity mContext;
+    private Context mContext;
     private SensorManager mSensorManager;
     private Sensor mSensor;
 
+    private long mShakeTimeLast = 0;
     private long mShakeTime = 0;
+    private int shakeTimes = 0;
 
     private AccelerometerHelper() {
         // TODO Get gid of google ConcurrentMap. Investigate event based libraries.
@@ -47,7 +48,7 @@ public class AccelerometerHelper implements SensorEventListener {
         mOnAccelerometerListeners = Collections.newSetFromMap(concurrentMap);
     }
 
-    protected void init(Activity context) {
+    protected void init(Context context) {
         mContext = context;
         mSensorManager = (SensorManager) mContext.getSystemService(Context.SENSOR_SERVICE);
         mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -110,15 +111,38 @@ public class AccelerometerHelper implements SensorEventListener {
             float gX = event.values[0] / SensorManager.GRAVITY_EARTH;
             float gY = event.values[1] / SensorManager.GRAVITY_EARTH;
             float gZ = event.values[2] / SensorManager.GRAVITY_EARTH;
-
             // gForce will be close to 1 when there is no movement
             float gForce = FloatMath.sqrt(gX * gX + gY * gY + gZ * gZ);
-
             // Change background color if gForce exceeds threshold;
             // otherwise, reset the color
-            if (gForce > SHAKE_THRESHOLD) {
-                return true;
+            boolean wasShaken = gForce > SHAKE_THRESHOLD;
+            if (!wasShaken) {
+                return false;
             }
+
+            /////
+            boolean proceedFurther = true;
+            if (!MainActivity.isForeground(mContext)) {
+                if (now - mShakeTimeLast > 1000 * 3) {
+                    mShakeTimeLast = now;
+                    shakeTimes = 0;
+                    return false;
+                }
+                if (shakeTimes > 4) {
+                    shakeTimes = 0;
+                    proceedFurther = true;
+                } else {
+                    shakeTimes++;
+                    proceedFurther = false;
+                }
+            }
+            if (!proceedFurther) {
+                return false;
+            }
+
+            //////
+            shakeTimes = 0;
+            return true;
         }
 
         return false;

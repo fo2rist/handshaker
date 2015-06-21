@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         applicationId "com.weezlabs.research.handshaker"
-        minSdkVersion 16
+        minSdkVersion 18
         targetSdkVersion 22
         versionCode 1
         versionName "1.0"
@@ -19,9 +19,16 @@ android {
     }
 }
 
+buildscript {
+    repositories {
+        jcenter()
+    }
+}
+
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     wearApp project(':wear')
     compile 'com.android.support:appcompat-v7:22.2.0'
     compile 'com.google.android.gms:play-services:7.5.0'
+    compile 'com.github.aakira:okwear:1.0.2'
 }

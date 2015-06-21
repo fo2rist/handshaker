@@ -20,16 +20,6 @@ import com.weezlabs.research.handshaker.SensorFragmentPagerAdapter.DisplayMode;
 
 public class SensorFragment extends Fragment implements AccelerometerHelper.OnAccelerometerListener {
 
-    private DisplayMode mMode;
-    @Nullable
-    private TextView mTextValues;
-    @Nullable
-    private ImageView mBlotImage;
-    @Nullable
-    private TextView mShakingText;
-    @Nullable
-    private Animation mFadeInAnimation;
-
     public static SensorFragment newInstance(int mode) {
         SensorFragment fragment = new SensorFragment();
 
@@ -40,6 +30,16 @@ public class SensorFragment extends Fragment implements AccelerometerHelper.OnAc
         return fragment;
     }
 
+    private DisplayMode mMode;
+    @Nullable
+    private TextView mTextValues;
+    @Nullable
+    private ImageView mBlotImage;
+    @Nullable
+    private TextView mShakingText;
+    @Nullable
+    private Animation mFadeInAnimation;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,7 +48,6 @@ public class SensorFragment extends Fragment implements AccelerometerHelper.OnAc
         if (args != null) {
             mMode = DisplayMode.get(args.getInt("mode"));
         }
-
     }
 
     @Nullable
@@ -63,45 +62,47 @@ public class SensorFragment extends Fragment implements AccelerometerHelper.OnAc
             mBlotImage = (ImageView) view.findViewById(R.id.blot_image);
             mShakingText = (TextView) view.findViewById(R.id.start_shaking_text);
 
-            DisplayMetrics metrics = new DisplayMetrics();
-            getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
-            int width = metrics.widthPixels;
+            if (!((MainActivity)getActivity()).noSplash) {
+                DisplayMetrics metrics = new DisplayMetrics();
+                getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
+                int width = metrics.widthPixels;
 
-            final TranslateAnimation shakingAnimation;
-            shakingAnimation = new TranslateAnimation(0f, 0F, 0F, width / 3.8F);
-            shakingAnimation.setDuration(2000);
-            shakingAnimation.setRepeatCount(-1);
-            shakingAnimation.setRepeatMode(Animation.REVERSE);
-            shakingAnimation.setInterpolator(new BounceInterpolator());
+                final TranslateAnimation shakingAnimation;
+                shakingAnimation = new TranslateAnimation(0f, 0F, 0F, width / 3.8F);
+                shakingAnimation.setDuration(2000);
+                shakingAnimation.setRepeatCount(-1);
+                shakingAnimation.setRepeatMode(Animation.REVERSE);
+                shakingAnimation.setInterpolator(new BounceInterpolator());
 
-            new Handler().postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    mShakingText.startAnimation(shakingAnimation);
-                }
-            }, 2000);
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (mShakingText.getVisibility() == View.VISIBLE) {
+                            mShakingText.startAnimation(shakingAnimation);
+                        }
+                    }
+                }, 2000);
+            } else {
+                mShakingText.setVisibility(View.GONE);
+                mBlotImage.setVisibility(View.VISIBLE);
+            }
 
             mFadeInAnimation = AnimationUtils.loadAnimation(getActivity(), R.anim.fade_in);
         } else {
             throw new IllegalArgumentException("Unexpected mode was passed");
         }
 
+        AccelerometerHelper.getInstance().init(getActivity());
+        AccelerometerHelper.getInstance().register(this);
         return view;
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-        AccelerometerHelper.getInstance().register(this);
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
+    public void onStop() {
         AccelerometerHelper.getInstance().unregister(this);
+        super.onStop();
     }
 
-    //region [overrides OnAccelerometerListener]
     @Override
     public void onAccelerometerValueChanged(SensorEvent event) {
         if (mMode == DisplayMode.User) {
@@ -114,8 +115,8 @@ public class SensorFragment extends Fragment implements AccelerometerHelper.OnAc
 
         mTextValues.setText(
                 "x = " + Float.toString(event.values[0]) + "\n" +
-                "y = " + Float.toString(event.values[1]) + "\n" +
-                "z = " + Float.toString(event.values[2]) + "\n"
+                        "y = " + Float.toString(event.values[1]) + "\n" +
+                        "z = " + Float.toString(event.values[2]) + "\n"
         );
     }
 
@@ -137,6 +138,22 @@ public class SensorFragment extends Fragment implements AccelerometerHelper.OnAc
 
         mBlotImage.clearAnimation();
         mBlotImage.startAnimation(mFadeInAnimation);
+
+//        OkWear ok = new OkWear(getActivity());
+//        ok.connect();
+//        Payload payload =
+//                new Payload.Builder("/path")
+//                        .addPayload("key1", 0)
+//                        .addPayload("key2", "hello")
+//                        .build();
+//
+//        // use callback listener
+//        ok.syncData(payload, new SendResultListener<DataApi.DataItemResult>() {
+//            @Override
+//            public void onResult(DataApi.DataItemResult result) {
+//                Log.v("LOL", "LOL Status: " + result.getStatus());
+//            }
+//        });
     }
-    //endregion
+
 }
