@@ -87,17 +87,14 @@ public class MainActivity extends Activity {
 		}
 	}
 
-
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		
+
 		// Customize ActionBar
 		ActionBar actionBar = getActionBar();
-		actionBar.setTitle("H-A-N-D-S-H-A-K-E-R");
-		actionBar.setBackgroundDrawable(new ColorDrawable(getResources().getColor(android.R.color.holo_blue_dark)));
-		actionBar.setIcon(R.drawable.ic_app);
+		actionBar.setTitle(R.string.app_title);
 
 		//Get controls
 		todayProgress = (ArcProgress) findViewById(R.id.today_progress);
