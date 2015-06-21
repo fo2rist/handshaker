@@ -17,12 +17,12 @@
       {
         "menuIcon": true,
         "type": "png",
-        "name": "IMAGE_MENU_ICON",
+        "name": "MENU_ICON",
         "file": "menu_icon.png"
       },
       {
         "type": "png",
-        "name": "IMAGE_LOGO",
+        "name": "LOGO",
         "file": "logo.png"
       }
     ]
