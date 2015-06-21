@@ -151,7 +151,6 @@ public class MainActivity extends Activity {
 			public void onReceive(Context context, Intent intent) {
 				Log.i(getLocalClassName(), "Pebble connected!");
 			}
-
 		});
 
 		PebbleKit.registerPebbleDisconnectedReceiver(getApplicationContext(), new BroadcastReceiver() {
@@ -160,7 +159,6 @@ public class MainActivity extends Activity {
 			public void onReceive(Context context, Intent intent) {
 				Log.i(getLocalClassName(), "Pebble disconnected!");
 			}
-
 		});
 	}
 	

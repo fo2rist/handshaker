@@ -4,7 +4,7 @@
 
 
 static const int32_t G = 1000;
-static const int32_t THRESHOLD = 250000;
+static const int32_t THRESHOLD = 450000;
 static const int16_t SAMPLES_BUFFER_SIZE = 30;
 static int last_samples_ampl_buffer[30] = {};
 static int16_t last_sample_position = 0;
