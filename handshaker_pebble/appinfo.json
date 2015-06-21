@@ -13,6 +13,18 @@
     "dummy": 0
   },
   "resources": {
-    "media": []
+    "media": [
+      {
+        "menuIcon": true,
+        "type": "png",
+        "name": "IMAGE_MENU_ICON",
+        "file": "menu_icon.png"
+      },
+      {
+        "type": "png",
+        "name": "IMAGE_LOGO",
+        "file": "logo.png"
+      }
+    ]
   }
 }
