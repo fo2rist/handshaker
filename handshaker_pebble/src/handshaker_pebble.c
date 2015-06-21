@@ -4,9 +4,8 @@
 
 static Window *window;
 static TextLayer *text_layer;
-
-static int last_start_time;
-static int last_stop_time;
+static GBitmap *s_bitmap;
+static BitmapLayer *s_bitmap_layer;
 
 static const int16_t KEY_TYPE = 0;
 static const int16_t KEY_ACCEL_X = 1;
@@ -22,13 +21,14 @@ static const int16_t TYPE_PROGRESS = 2;
 
 // --------------------- APP COMMUNICATION -----------------------
 static void send_accel_data(int16_t x, int16_t y, int16_t z) {
-  DictionaryIterator *iter;
-  app_message_outbox_begin(&iter);
-  dict_write_int(iter, KEY_TYPE, &TYPE_PROGRESS, sizeof(uint16_t), true /*signed*/);
-  dict_write_int(iter, KEY_ACCEL_X, &x, sizeof(int16_t), true /*signed*/);
-  dict_write_int(iter, KEY_ACCEL_Y, &y, sizeof(int16_t), true /*signed*/);
-  dict_write_int(iter, KEY_ACCEL_Z, &z, sizeof(int16_t), true /*signed*/);
-  app_message_outbox_send();
+  //Disabled because of performance issues
+//  DictionaryIterator *iter;
+//  app_message_outbox_begin(&iter);
+//  dict_write_int(iter, KEY_TYPE, &TYPE_PROGRESS, sizeof(uint16_t), true /*signed*/);
+//  dict_write_int(iter, KEY_ACCEL_X, &x, sizeof(int16_t), true /*signed*/);
+//  dict_write_int(iter, KEY_ACCEL_Y, &y, sizeof(int16_t), true /*signed*/);
+//  dict_write_int(iter, KEY_ACCEL_Z, &z, sizeof(int16_t), true /*signed*/);
+//  app_message_outbox_send();
 }
 
 static void send_start_notification() {
@@ -54,48 +54,49 @@ static void worker_message_handler(uint16_t type, AppWorkerMessage *data) {
   switch ((BackgroundMessageType)type) {
 
     case BackgroundMessageJerkProgress: {
-      // Read ticks from worker's packet
+      // Compose string of all data
       AccelData accel_data = {
         .x = data->data0,
         .y = data->data1,
         .z = data->data2,
         .did_vibrate = false
       };
-    
-      // Compose string of all data
       snprintf(s_buffer, sizeof(s_buffer),
-               "Accel X,Y,Z\n %d,%d,%d\n",
-               accel_data.x, accel_data.y, accel_data.z
+               "Go GO GOOOO!"
                );
-      APP_LOG(APP_LOG_LEVEL_DEBUG, "%d,%d,%d", accel_data.x, accel_data.y, accel_data.z);
+      layer_set_hidden(bitmap_layer_get_layer(s_bitmap_layer), !layer_get_hidden(bitmap_layer_get_layer(s_bitmap_layer))); //Add some blinking
     
       // Notify phone
       send_accel_data(accel_data.x, accel_data.y, accel_data.z);
+
+      APP_LOG(APP_LOG_LEVEL_DEBUG, "%d,%d,%d", accel_data.x, accel_data.y, accel_data.z);
       break;
     }
     case BackgroundMessageJerkStarted: {
-      last_start_time = data->data0;
       // Compose string of all data
       snprintf(s_buffer, sizeof(s_buffer),
-              "Accel Exceeded\n"
+              "Accel Exceeded"
               );
-      APP_LOG(APP_LOG_LEVEL_DEBUG, "Start");
       
       // Notify phone
       send_start_notification();
+
+      APP_LOG(APP_LOG_LEVEL_DEBUG, "Start");
       break;
     }
     case BackgroundMessageJerkStopped: {
-      last_stop_time = data->data0;
       // Compose string of all data
+      int duration = data->data0;
       snprintf(s_buffer, sizeof(s_buffer),
-               "Did it for %d sec\n",
-               last_stop_time - last_start_time
+               "Did it in %d sec",
+               duration
                );
-      APP_LOG(APP_LOG_LEVEL_DEBUG, "Stop. Duration %d", last_stop_time - last_start_time);
+      layer_set_hidden(bitmap_layer_get_layer(s_bitmap_layer), false); // Stop blinking
       
       // Notify phone
-      send_stop_notification(last_stop_time - last_start_time);
+      send_stop_notification(duration);
+
+      APP_LOG(APP_LOG_LEVEL_DEBUG, "Stop. Duration %d", duration);
       break;
     }
   };
@@ -111,11 +112,11 @@ static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   AppWorkerResult result = app_worker_launch();
   switch (result) {
     case APP_WORKER_RESULT_SUCCESS:
-      text_layer_set_text(text_layer, "Runned");
+      text_layer_set_text(text_layer, "Running");
       break;
 
     case APP_WORKER_RESULT_ALREADY_RUNNING:
-      text_layer_set_text(text_layer, "Already running.\nLet's stop.");
+      text_layer_set_text(text_layer, "Stopped");
       app_worker_kill();
       break;
 
@@ -147,14 +148,36 @@ static void window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
 
-  text_layer = text_layer_create((GRect) { .origin = { 0, 72 }, .size = { bounds.size.w, 60 } });
-  text_layer_set_text(text_layer, "Press a button");
+  // Init layers
+  s_bitmap = gbitmap_create_with_resource(RESOURCE_ID_LOGO);
+
+  s_bitmap_layer = bitmap_layer_create(bounds);
+  bitmap_layer_set_bitmap(s_bitmap_layer, s_bitmap);
+#ifdef PBL_PLATFORM_APLITE
+  bitmap_layer_set_compositing_mode(s_bitmap_layer, GCompOpAssign);
+#elif PBL_PLATFORM_BASALT
+  bitmap_layer_set_compositing_mode(s_bitmap_layer, GCompOpSet);
+#endif
+  layer_add_child(window_layer, bitmap_layer_get_layer(s_bitmap_layer));
+
+  text_layer = text_layer_create((GRect) { .origin = { 0, 128 }, .size = { bounds.size.w, 20 } });
   text_layer_set_text_alignment(text_layer, GTextAlignmentCenter);
   layer_add_child(window_layer, text_layer_get_layer(text_layer));
+
+
+  // Populate UI
+  // Check to see if the worker is currently active
+  bool running = app_worker_is_running();
+  if (running) {
+    text_layer_set_text(text_layer, "App is running");
+  } else {
+    text_layer_set_text(text_layer, "Press to launch");
+  }
 }
 
 static void window_unload(Window *window) {
   text_layer_destroy(text_layer);
+  gbitmap_destroy(s_bitmap);
 }
 
 static void init(void) {

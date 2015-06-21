@@ -16,7 +16,6 @@ import android.content.Intent;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -33,7 +32,6 @@ import com.weezlabs.handshakerphone.R;
 import com.weezlabs.handshakerphone.datastorage.AttemptsManager;
 import com.weezlabs.handshakerphone.models.Attempt;
 
-import jp.wasabeef.recyclerview.animators.ScaleInAnimator;
 
 public class MainActivity extends Activity {
 	
@@ -63,16 +61,40 @@ public class MainActivity extends Activity {
 	private ArcProgress monthProgress;
 	private RecyclerView attemptsList;
 
+	/**
+	 * Alternative sideloading method
+	 * Source: http://forums.getpebble.com/discussion/comment/103733/#Comment_103733
+	 */
+	private static void sideloadInstall(Context ctx, String assetFilename) {
+		try {
+			// Read .pbw from assets/
+			Intent intent = new Intent(Intent.ACTION_VIEW);
+			File file = new File(ctx.getExternalFilesDir(null), assetFilename);
+			InputStream is = ctx.getResources().getAssets().open(assetFilename);
+			OutputStream os = new FileOutputStream(file);
+			byte[] pbw = new byte[is.available()];
+			is.read(pbw);
+			os.write(pbw);
+			is.close();
+			os.close();
+
+			// Install via Pebble Android app
+			intent.setDataAndType(Uri.fromFile(file), "application/pbw");
+			intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+			ctx.startActivity(intent);
+		} catch (IOException e) {
+			Toast.makeText(ctx, "App install failed: " + e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+		}
+	}
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		
+
 		// Customize ActionBar
 		ActionBar actionBar = getActionBar();
-		actionBar.setTitle("H-A-N-D-S-H-A-K-E-R");
-		actionBar.setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.actionbar_orange)));
-		actionBar.setIcon(R.drawable.ic_app);
+		actionBar.setTitle(R.string.app_title);
 
 		//Get controls
 		todayProgress = (ArcProgress) findViewById(R.id.today_progress);
@@ -81,11 +103,10 @@ public class MainActivity extends Activity {
 		attemptsList = (RecyclerView) findViewById(R.id.attempts_list);
 
 		//Setup list
-		attemptsList.setItemAnimator(new ScaleInAnimator());
 		LinearLayoutManager llm = new LinearLayoutManager(this);
 		llm.setOrientation(LinearLayoutManager.VERTICAL);
 		attemptsList.setLayoutManager(llm);
-		attemptsList.setAdapter(AttemptsManager.getInstance().getAttemptsAdapter());
+		attemptsList.setAdapter(AttemptsManager.getInstance().getAttemptsAdapter(this));
 
 		//Register for messages
 		PebbleKit.registerReceivedDataHandler(this, new PebbleKit.PebbleDataReceiver(WATCHAPP_UUID) {
@@ -95,24 +116,28 @@ public class MainActivity extends Activity {
 				Long type = data.getInteger(KEY_TYPE);
 				switch (type.intValue()) {
 					case TYPE_START:
-						todayProgress.setFinishedStrokeColor(getResources().getColor(android.R.color.holo_blue_dark));
-						break;
-					case TYPE_PROGRESS:
 						todayProgress.setBottomText("...");
 						break;
+					case TYPE_PROGRESS:
+						break;
 					case TYPE_END:
-						todayProgress.setFinishedStrokeColor(getResources().getColor(android.R.color.holo_blue_light));
 						todayProgress.setBottomText("today");
 						int duration = data.getInteger(KEY_DURATION).intValue();
+
+						Date date = new Date();
+						date.setTime(date.getTime() - 1000L*duration);
 						AttemptsManager.getInstance().storeAttempt(
-								new Attempt(true, duration, new Date())
+							new Attempt(true, duration, date)
 						);
+						refreshStats();// Hack even more dirty than me
 						break;
 				}
 
 				PebbleKit.sendAckToPebble(getApplicationContext(), transactionId);
 			}
 		});
+
+		refreshStats();
 	}
 	
 	@Override
@@ -126,7 +151,6 @@ public class MainActivity extends Activity {
 			public void onReceive(Context context, Intent intent) {
 				Log.i(getLocalClassName(), "Pebble connected!");
 			}
-
 		});
 
 		PebbleKit.registerPebbleDisconnectedReceiver(getApplicationContext(), new BroadcastReceiver() {
@@ -135,7 +159,6 @@ public class MainActivity extends Activity {
 			public void onReceive(Context context, Intent intent) {
 				Log.i(getLocalClassName(), "Pebble disconnected!");
 			}
-
 		});
 	}
 	
@@ -163,30 +186,29 @@ public class MainActivity extends Activity {
 		return true;
 	}
 
-	/**
-     * Alternative sideloading method
-     * Source: http://forums.getpebble.com/discussion/comment/103733/#Comment_103733 
-     */
-    public static void sideloadInstall(Context ctx, String assetFilename) {
-        try {
-            // Read .pbw from assets/
-        	Intent intent = new Intent(Intent.ACTION_VIEW);    
-            File file = new File(ctx.getExternalFilesDir(null), assetFilename);
-            InputStream is = ctx.getResources().getAssets().open(assetFilename);
-            OutputStream os = new FileOutputStream(file);
-            byte[] pbw = new byte[is.available()];
-            is.read(pbw);
-            os.write(pbw);
-            is.close();
-            os.close();
-             
-            // Install via Pebble Android app
-            intent.setDataAndType(Uri.fromFile(file), "application/pbw");
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            ctx.startActivity(intent);
-        } catch (IOException e) {
-            Toast.makeText(ctx, "App install failed: " + e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
-        }
-    }
+	private void refreshStats() {
+		AttemptsManager attemptsManager = AttemptsManager.getInstance();
+
+		int todayProgressValue = 100 * attemptsManager.getTodayAttempts() / attemptsManager.getTodayGoal();
+		todayProgress.setProgress(Math.min(100, todayProgressValue));
+		if (todayProgressValue > 100) {
+			todayProgress.setFinishedStrokeColor(getResources().getColor(android.R.color.holo_red_dark));
+			todayProgress.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
+		}
+
+		int weekProgressValue = 100 * attemptsManager.getWeekAttempts() / attemptsManager.getWeekGoal();
+		weekProgress.setProgress(Math.min(100, weekProgressValue));
+		if (weekProgressValue > 100) {
+			weekProgress.setFinishedStrokeColor(getResources().getColor(android.R.color.holo_red_dark));
+			weekProgress.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
+		}
+
+		int monthProgressValue = 100 * attemptsManager.getMonthAttempts() / attemptsManager.getMonthGoal();
+		monthProgress.setProgress(Math.min(100, monthProgressValue));
+		if (monthProgressValue > 100) {
+			monthProgress.setFinishedStrokeColor(getResources().getColor(android.R.color.holo_red_dark));
+			monthProgress.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
+		}
+	}
 
 }
