@@ -96,7 +96,7 @@ public class MainActivity extends Activity {
 		// Customize ActionBar
 		ActionBar actionBar = getActionBar();
 		actionBar.setTitle("H-A-N-D-S-H-A-K-E-R");
-		actionBar.setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.actionbar_orange)));
+		actionBar.setBackgroundDrawable(new ColorDrawable(getResources().getColor(android.R.color.holo_blue_dark)));
 		actionBar.setIcon(R.drawable.ic_app);
 
 		//Get controls
@@ -119,17 +119,18 @@ public class MainActivity extends Activity {
 				Long type = data.getInteger(KEY_TYPE);
 				switch (type.intValue()) {
 					case TYPE_START:
-						todayProgress.setFinishedStrokeColor(getResources().getColor(android.R.color.holo_blue_dark));
-						break;
-					case TYPE_PROGRESS:
 						todayProgress.setBottomText("...");
 						break;
+					case TYPE_PROGRESS:
+						break;
 					case TYPE_END:
-						todayProgress.setFinishedStrokeColor(getResources().getColor(android.R.color.holo_blue_light));
 						todayProgress.setBottomText("today");
 						int duration = data.getInteger(KEY_DURATION).intValue();
+
+						Date date = new Date();
+						date.setTime(date.getTime() - 1000L*duration);
 						AttemptsManager.getInstance().storeAttempt(
-								new Attempt(true, duration, new Date())
+							new Attempt(true, duration, date)
 						);
 						refreshStats();// Hack even more dirty than me
 						break;
@@ -193,9 +194,26 @@ public class MainActivity extends Activity {
 	private void refreshStats() {
 		AttemptsManager attemptsManager = AttemptsManager.getInstance();
 
-		todayProgress.setProgress(100 * attemptsManager.getTodayAttempts() / attemptsManager.getTodayGoal());
-		weekProgress.setProgress(100 * attemptsManager.getWeekAttempts() / attemptsManager.getWeekGoal());
-		monthProgress.setProgress(100 * attemptsManager.getMonthAttempts() / attemptsManager.getMonthGoal());
+		int todayProgressValue = 100 * attemptsManager.getTodayAttempts() / attemptsManager.getTodayGoal();
+		todayProgress.setProgress(Math.min(100, todayProgressValue));
+		if (todayProgressValue > 100) {
+			todayProgress.setFinishedStrokeColor(getResources().getColor(android.R.color.holo_red_dark));
+			todayProgress.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
+		}
+
+		int weekProgressValue = 100 * attemptsManager.getWeekAttempts() / attemptsManager.getWeekGoal();
+		weekProgress.setProgress(Math.min(100, weekProgressValue));
+		if (weekProgressValue > 100) {
+			weekProgress.setFinishedStrokeColor(getResources().getColor(android.R.color.holo_red_dark));
+			weekProgress.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
+		}
+
+		int monthProgressValue = 100 * attemptsManager.getMonthAttempts() / attemptsManager.getMonthGoal();
+		monthProgress.setProgress(Math.min(100, monthProgressValue));
+		if (monthProgressValue > 100) {
+			monthProgress.setFinishedStrokeColor(getResources().getColor(android.R.color.holo_red_dark));
+			monthProgress.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
+		}
 	}
 
 }

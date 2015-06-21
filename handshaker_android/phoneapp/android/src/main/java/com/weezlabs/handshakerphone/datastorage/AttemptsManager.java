@@ -12,6 +12,7 @@ import java.util.List;
 
 public class AttemptsManager {
     public static final long DAY_MILLISECONDS = 86400000L;
+    public static final long JERKOFF_MIN_SECONDS = 3;
     private static AttemptsManager instance_ = null;
 
     private ArrayList<Attempt> attemptsList_ = new ArrayList<Attempt>();
@@ -39,9 +40,9 @@ public class AttemptsManager {
         attemptsList_.add(new Attempt(true, 10, now));
         attemptsList_.add(new Attempt(true, 110, yesterday));
         attemptsList_.add(new Attempt(false, 120, weekAgo));
-        attemptsList_.add(new Attempt(false, 13, someDayAgo));
+        attemptsList_.add(new Attempt(false, 130, someDayAgo));
         attemptsList_.add(new Attempt(false, 140, monthAgo));
-        attemptsList_.add(new Attempt(false, 15, monthAgo));
+        attemptsList_.add(new Attempt(false, 150, monthAgo));
     }
 
     public List<Attempt> getAttempts() {
@@ -49,7 +50,25 @@ public class AttemptsManager {
     }
 
     public void storeAttempt(Attempt attempt) {
-        attemptsList_.add(0, attempt);
+        Attempt lastAttempt = null;
+        if (!attemptsList_.isEmpty()) {
+            lastAttempt = attemptsList_.get(0);
+        }
+
+        //If not to much time passed since the last attempt
+        if (lastAttempt != null
+            && (attempt.date.getTime() - (lastAttempt.date.getTime() + lastAttempt.duration*1000) < 10000)) {
+
+            attempt = new Attempt(attempt.successfull, attempt.duration + lastAttempt.duration, lastAttempt.date);
+            attemptsList_.set(0, attempt); //Update first item
+        } else { //a new attempt
+            if (attempt.duration >= JERKOFF_MIN_SECONDS) {
+                attemptsList_.add(0, attempt); //add new item
+            } else {
+                return; //false alarm stop working
+            }
+        }
+
         if (attemptsAdapter_ != null) {
             attemptsAdapter_.notifyDataSetChanged();
         }
@@ -67,7 +86,7 @@ public class AttemptsManager {
         Date now = new Date();
         int result = 0;
         for (Attempt attempt : attemptsList_) {
-            result += ((now.getTime() - attempt.date.getTime()) > DAY_MILLISECONDS) ? 1 : 0;
+            result += ((now.getTime() - attempt.date.getTime()) < DAY_MILLISECONDS) ? 1 : 0;
         }
         return result;
     }
@@ -80,7 +99,7 @@ public class AttemptsManager {
         Date now = new Date();
         int result = 0;
         for (Attempt attempt : attemptsList_) {
-            result += ((now.getTime() - attempt.date.getTime()) > DAY_MILLISECONDS * 7) ? 1 : 0;
+            result += ((now.getTime() - attempt.date.getTime()) < DAY_MILLISECONDS * 7) ? 1 : 0;
         }
         return result;
     }
@@ -93,7 +112,7 @@ public class AttemptsManager {
         Date now = new Date();
         int result = 0;
         for (Attempt attempt : attemptsList_) {
-            result += ((now.getTime() - attempt.date.getTime()) > DAY_MILLISECONDS * 30) ? 1 : 0;
+            result += ((now.getTime() - attempt.date.getTime()) < DAY_MILLISECONDS * 30) ? 1 : 0;
         }
         return result;
     }

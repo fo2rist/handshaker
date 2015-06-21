@@ -22,13 +22,14 @@ static const int16_t TYPE_PROGRESS = 2;
 
 // --------------------- APP COMMUNICATION -----------------------
 static void send_accel_data(int16_t x, int16_t y, int16_t z) {
-  DictionaryIterator *iter;
-  app_message_outbox_begin(&iter);
-  dict_write_int(iter, KEY_TYPE, &TYPE_PROGRESS, sizeof(uint16_t), true /*signed*/);
-  dict_write_int(iter, KEY_ACCEL_X, &x, sizeof(int16_t), true /*signed*/);
-  dict_write_int(iter, KEY_ACCEL_Y, &y, sizeof(int16_t), true /*signed*/);
-  dict_write_int(iter, KEY_ACCEL_Z, &z, sizeof(int16_t), true /*signed*/);
-  app_message_outbox_send();
+  //Disabled because of performance issues
+//  DictionaryIterator *iter;
+//  app_message_outbox_begin(&iter);
+//  dict_write_int(iter, KEY_TYPE, &TYPE_PROGRESS, sizeof(uint16_t), true /*signed*/);
+//  dict_write_int(iter, KEY_ACCEL_X, &x, sizeof(int16_t), true /*signed*/);
+//  dict_write_int(iter, KEY_ACCEL_Y, &y, sizeof(int16_t), true /*signed*/);
+//  dict_write_int(iter, KEY_ACCEL_Z, &z, sizeof(int16_t), true /*signed*/);
+//  app_message_outbox_send();
 }
 
 static void send_start_notification() {
