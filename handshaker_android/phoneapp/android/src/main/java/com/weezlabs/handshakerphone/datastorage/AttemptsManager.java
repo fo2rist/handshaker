@@ -24,9 +24,18 @@ public class AttemptsManager {
     }
 
     private AttemptsManager() {
-        attemptsList_.add(new Attempt(true, 10, new Date()));
-        attemptsList_.add(new Attempt(true, 110, new Date()));
-        attemptsList_.add(new Attempt(false, 20, new Date()));
+        Date now = new Date();
+        Date yesterday = new Date();
+        yesterday.setTime(now.getTime() - 86500000);
+        Date someDayAgo = new Date();
+        someDayAgo.setTime(now.getTime() - 86400000*10);
+
+        attemptsList_.add(new Attempt(true, 10, now));
+        attemptsList_.add(new Attempt(true, 110, yesterday));
+        attemptsList_.add(new Attempt(false, 20, someDayAgo));
+        attemptsList_.add(new Attempt(false, 21, someDayAgo));
+        attemptsList_.add(new Attempt(false, 22, someDayAgo));
+        attemptsList_.add(new Attempt(false, 23, someDayAgo));
     }
 
     public List<Attempt> getAttempts() {

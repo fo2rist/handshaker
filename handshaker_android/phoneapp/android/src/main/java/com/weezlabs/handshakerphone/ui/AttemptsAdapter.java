@@ -14,6 +14,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class AttemptsAdapter extends RecyclerView.Adapter<AttemptsAdapter.AttemptViewHolder> {
 
@@ -56,10 +57,13 @@ public class AttemptsAdapter extends RecyclerView.Adapter<AttemptsAdapter.Attemp
         String dateText = null;
         if (eventDay.get(Calendar.YEAR) == today.get(Calendar.YEAR)
                 && eventDay.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR)) {
-            dateText = "today";
-        } else {
+            dateText = "Today";
+        } else if (eventDay.get(Calendar.YEAR) == today.get(Calendar.YEAR)
+                && (eventDay.get(Calendar.DAY_OF_YEAR)+1) == today.get(Calendar.DAY_OF_YEAR)){
+            dateText = "Yesterday";
+        }else {
             //default
-            dateText = new SimpleDateFormat().format(attemptInfo.date);
+            dateText = new SimpleDateFormat("MMM d yyyy").format(attemptInfo.date);
         }
 
         attemptViewHolder.date.setText( dateText );

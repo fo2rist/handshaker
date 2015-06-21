@@ -16,6 +16,7 @@ import android.content.Intent;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -31,6 +32,8 @@ import com.github.lzyzsd.circleprogress.ArcProgress;
 import com.weezlabs.handshakerphone.R;
 import com.weezlabs.handshakerphone.datastorage.AttemptsManager;
 import com.weezlabs.handshakerphone.models.Attempt;
+
+import jp.wasabeef.recyclerview.animators.ScaleInAnimator;
 
 public class MainActivity extends Activity {
 	
@@ -67,7 +70,7 @@ public class MainActivity extends Activity {
 		
 		// Customize ActionBar
 		ActionBar actionBar = getActionBar();
-		actionBar.setTitle("HandShaker");
+		actionBar.setTitle("H-A-N-D-S-H-A-K-E-R");
 		actionBar.setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.actionbar_orange)));
 		actionBar.setIcon(R.drawable.ic_app);
 
@@ -78,7 +81,7 @@ public class MainActivity extends Activity {
 		attemptsList = (RecyclerView) findViewById(R.id.attempts_list);
 
 		//Setup list
-		attemptsList.setHasFixedSize(true);
+		attemptsList.setItemAnimator(new ScaleInAnimator());
 		LinearLayoutManager llm = new LinearLayoutManager(this);
 		llm.setOrientation(LinearLayoutManager.VERTICAL);
 		attemptsList.setLayoutManager(llm);

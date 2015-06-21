@@ -20,6 +20,7 @@ android {
     dependencies {
         compile 'com.getpebble:pebblekit:3.0.0'
         compile 'com.github.lzyzsd:circleprogress:1.1.0@aar'
+        compile 'jp.wasabeef:recyclerview-animators:1.2.0@aar'
         compile 'com.android.support:cardview-v7:21.0.+'
         compile 'com.android.support:recyclerview-v7:21.0.+'
     }
