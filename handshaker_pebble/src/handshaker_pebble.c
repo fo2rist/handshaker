@@ -7,9 +7,6 @@ static TextLayer *text_layer;
 static GBitmap *s_bitmap;
 static BitmapLayer *s_bitmap_layer;
 
-static int last_start_time;
-static int last_stop_time;
-
 static const int16_t KEY_TYPE = 0;
 static const int16_t KEY_ACCEL_X = 1;
 static const int16_t KEY_ACCEL_Y = 2;
@@ -77,7 +74,6 @@ static void worker_message_handler(uint16_t type, AppWorkerMessage *data) {
     }
     case BackgroundMessageJerkStarted: {
       // Compose string of all data
-      last_start_time = data->data0;
       snprintf(s_buffer, sizeof(s_buffer),
               "Accel Exceeded"
               );
@@ -90,17 +86,17 @@ static void worker_message_handler(uint16_t type, AppWorkerMessage *data) {
     }
     case BackgroundMessageJerkStopped: {
       // Compose string of all data
-      last_stop_time = data->data0;
+      int duration = data->data0;
       snprintf(s_buffer, sizeof(s_buffer),
                "Did it in %d sec",
-               last_stop_time - last_start_time
+               duration
                );
       layer_set_hidden(bitmap_layer_get_layer(s_bitmap_layer), false); // Stop blinking
       
       // Notify phone
-      send_stop_notification(last_stop_time - last_start_time);
+      send_stop_notification(duration);
 
-      APP_LOG(APP_LOG_LEVEL_DEBUG, "Stop. Duration %d", last_stop_time - last_start_time);
+      APP_LOG(APP_LOG_LEVEL_DEBUG, "Stop. Duration %d", duration);
       break;
     }
   };
