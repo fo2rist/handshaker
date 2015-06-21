@@ -7,6 +7,7 @@ import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
@@ -25,6 +26,7 @@ import com.google.android.gms.fitness.request.DataSourcesRequest;
 import com.google.android.gms.fitness.request.OnDataPointListener;
 import com.google.android.gms.fitness.request.SensorRequest;
 import com.google.android.gms.fitness.result.DataSourcesResult;
+import com.mariux.teleport.lib.TeleportClient;
 
 import java.util.concurrent.TimeUnit;
 
@@ -33,6 +35,9 @@ public class MainActivity extends ActionBarActivity {
 
     private static final String TAG = "Handshaker";
     private static final int REQUEST_OAUTH = 1;
+
+    private TeleportClient mTeleportClient;
+
     /**
      * Track whether an authorization activity is stacking over the current activity, i.e. when
      * a known auth error is being resolved, such as showing the account chooser or presenting a
@@ -56,15 +61,19 @@ public class MainActivity extends ActionBarActivity {
             authInProgress = savedInstanceState.getBoolean(AUTH_PENDING);
         }
 
+        mTeleportClient = new TeleportClient(this);
+        mTeleportClient.setOnGetMessageTask(new StartActivityTask());
         buildFitnessClient();
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        // Connect to the Fitness API
+        //Connect to the Fitness API
         Log.i(TAG, "Connecting...");
         mClient.connect();
+
+        mTeleportClient.connect();
     }
 
     @Override
@@ -72,6 +81,19 @@ public class MainActivity extends ActionBarActivity {
         super.onStop();
         if (mClient.isConnected()) {
             mClient.disconnect();
+        }
+
+        mTeleportClient.disconnect();
+    }
+
+    private static final String STARTACTIVITY = "startActivity";
+    public class StartActivityTask extends TeleportClient.OnGetMessageTask {
+        @Override
+        protected void onPostExecute(String path) {
+            if (path.equals(STARTACTIVITY)){
+                Toast.makeText(MainActivity.this, "YEE!", Toast.LENGTH_SHORT).show();
+            }
+
         }
     }
 

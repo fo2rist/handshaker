@@ -5,9 +5,13 @@ import android.content.Intent;
 import android.hardware.SensorEvent;
 import android.os.IBinder;
 
+import com.mariux.teleport.lib.TeleportClient;
+
 public class SensorBackgroundService extends Service implements AccelerometerHelper.OnAccelerometerListener {
 
     private static final String TAG = "LOL";
+
+    private TeleportClient mTeleportClient;
 
     @Override
     public void onCreate() {
@@ -15,6 +19,9 @@ public class SensorBackgroundService extends Service implements AccelerometerHel
 
         AccelerometerHelper.getInstance().init(getApplicationContext());
         AccelerometerHelper.getInstance().register(this);
+
+        mTeleportClient = new TeleportClient(this);
+        mTeleportClient.connect();
     }
 
     @Override
@@ -30,6 +37,7 @@ public class SensorBackgroundService extends Service implements AccelerometerHel
     @Override
     public void onDestroy() {
         AccelerometerHelper.getInstance().unregister(this);
+        mTeleportClient.disconnect();
         super.onDestroy();
     }
 
@@ -64,6 +72,7 @@ public class SensorBackgroundService extends Service implements AccelerometerHel
     }
 
     private void sendToDevice() {
+        mTeleportClient.sendMessage("startActivity", null);
     }
 
 }
